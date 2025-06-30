@@ -1,0 +1,23 @@
+{
+  "name": "audit-logger-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for immutable audit logging",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network goerli",
+    "verify": "hardhat verify --network goerli"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.2",
+    "@openzeppelin/contracts": "^4.9.3",
+    "hardhat": "^2.17.1",
+    "chai": "^4.3.7",
+    "ethers": "^6.7.1"
+  },
+  "keywords": ["audit", "blockchain", "smart-contracts", "ethereum"],
+  "author": "Analytics Pipeline Team",
+  "license": "MIT"
+}

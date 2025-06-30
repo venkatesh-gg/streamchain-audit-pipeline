@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: analytics-pipeline
+  labels:
+    name: analytics-pipeline
+    app.kubernetes.io/name: analytics-pipeline
+    app.kubernetes.io/version: "1.0.0"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pipeline-config
+  namespace: analytics-pipeline
+data:
+  DATABASE_URL: "postgresql://analytics_user:analytics_password@postgres:5432/analytics_db"
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  ETHEREUM_RPC_URL: "http://ethereum-node:8545"
+  IPFS_API_URL: "http://ipfs:5001"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"

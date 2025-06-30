@@ -1,0 +1,250 @@
+groups:
+- name: analytics-pipeline.rules
+  rules:
+  # Application-level alerts
+  - alert: HighErrorRate
+    expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+    for: 5m
+    labels:
+      severity: critical
+      service: api
+    annotations:
+      summary: "High error rate detected"
+      description: "Error rate is {{ $value }} for {{ $labels.instance }}"
+
+  - alert: HighResponseTime
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+    for: 5m
+    labels:
+      severity: warning
+      service: api
+    annotations:
+      summary: "High response time detected"
+      description: "95th percentile response time is {{ $value }}s for {{ $labels.instance }}"
+
+  - alert: HighAnomalyRate
+    expr: rate(audit_anomalies_total[5m]) > 0.05
+    for: 2m
+    labels:
+      severity: warning
+      service: analytics
+    annotations:
+      summary: "High anomaly detection rate"
+      description: "Anomaly rate is {{ $value }} for the last 5 minutes"
+
+  # Infrastructure alerts
+  - alert: DatabaseConnectionDown
+    expr: up{job="postgres"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: database
+    annotations:
+      summary: "Database connection is down"
+      description: "PostgreSQL database {{ $labels.instance }} is not responding"
+
+  - alert: ElasticsearchClusterDown
+    expr: up{job="elasticsearch"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: search
+    annotations:
+      summary: "Elasticsearch cluster is down"
+      description: "Elasticsearch cluster {{ $labels.instance }} is not responding"
+
+  - alert: KafkaDown
+    expr: up{job="kafka"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: messaging
+    annotations:
+      summary: "Kafka broker is down"
+      description: "Kafka broker {{ $labels.instance }} is not responding"
+
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+      service: infrastructure
+    annotations:
+      summary: "High CPU usage detected"
+      description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+      service: infrastructure
+    annotations:
+      summary: "High memory usage detected"
+      description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+  - alert: DiskSpaceLow
+    expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+    for: 10m
+    labels:
+      severity: warning
+      service: infrastructure
+    annotations:
+      summary: "Low disk space"
+      description: "Disk usage is {{ $value }}% on {{ $labels.instance }} {{ $labels.mountpoint }}"
+
+  # Blockchain-specific alerts
+  - alert: EthereumNodeDown
+    expr: up{job="ethereum-node"} == 0
+    for: 2m
+    labels:
+      severity: critical
+      service: blockchain
+    annotations:
+      summary: "Ethereum node is down"
+      description: "Ethereum node {{ $labels.instance }} is not responding"
+
+  - alert: BlockchainSyncLag
+    expr: (time() - blockchain_last_block_timestamp) > 300
+    for: 5m
+    labels:
+      severity: warning
+      service: blockchain
+    annotations:
+      summary: "Blockchain synchronization lag"
+      description: "Blockchain is {{ $value }}s behind the current time"
+
+  - alert: HighGasPrice
+    expr: ethereum_gas_price_gwei > 100
+    for: 10m
+    labels:
+      severity: warning
+      service: blockchain
+    annotations:
+      summary: "High gas prices detected"
+      description: "Gas price is {{ $value }} Gwei, consider delaying transactions"
+
+  # Stream processing alerts
+  - alert: FlinkJobDown
+    expr: up{job="flink"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: stream-processing
+    annotations:
+      summary: "Flink job is down"
+      description: "Flink job manager {{ $labels.instance }} is not responding"
+
+  - alert: KafkaConsumerLag
+    expr: kafka_consumer_lag_sum > 1000
+    for: 5m
+    labels:
+      severity: warning
+      service: messaging
+    annotations:
+      summary: "High Kafka consumer lag"
+      description: "Consumer lag is {{ $value }} messages for {{ $labels.topic }}"
+
+  - alert: EventProcessingDelay
+    expr: rate(events_processed_total[5m]) < rate(events_received_total[5m]) * 0.8
+    for: 10m
+    labels:
+      severity: warning
+      service: stream-processing
+    annotations:
+      summary: "Event processing delay"
+      description: "Processing rate is falling behind ingestion rate"
+
+  # Security alerts
+  - alert: SuspiciousActivity
+    expr: rate(security_events_total{type="suspicious"}[5m]) > 0.1
+    for: 1m
+    labels:
+      severity: critical
+      service: security
+    annotations:
+      summary: "Suspicious activity detected"
+      description: "{{ $value }} suspicious events detected in the last 5 minutes"
+
+  - alert: FailedAuthenticationAttempts
+    expr: rate(authentication_failures_total[5m]) > 10
+    for: 2m
+    labels:
+      severity: warning
+      service: security
+    annotations:
+      summary: "High rate of authentication failures"
+      description: "{{ $value }} authentication failures per second in the last 5 minutes"
+
+  - alert: UnusualDataAccess
+    expr: rate(data_access_events_total{anomaly="true"}[5m]) > 0.05
+    for: 5m
+    labels:
+      severity: warning
+      service: security
+    annotations:
+      summary: "Unusual data access patterns"
+      description: "{{ $value }} anomalous data access events detected"
+
+  # Business logic alerts
+  - alert: TransactionVolumeAnomaly
+    expr: abs(rate(transactions_total[5m]) - rate(transactions_total[1h] offset 1h)) / rate(transactions_total[1h] offset 1h) > 0.5
+    for: 10m
+    labels:
+      severity: warning
+      service: business
+    annotations:
+      summary: "Transaction volume anomaly"
+      description: "Transaction volume has changed by {{ $value }}% compared to the same time yesterday"
+
+  - alert: LowDataQuality
+    expr: data_quality_score < 0.8
+    for: 15m
+    labels:
+      severity: warning
+      service: data-quality
+    annotations:
+      summary: "Data quality score is low"
+      description: "Data quality score is {{ $value }}, below acceptable threshold of 0.8"
+
+  # IPFS alerts
+  - alert: IPFSNodeDown
+    expr: up{job="ipfs"} == 0
+    for: 2m
+    labels:
+      severity: critical
+      service: storage
+    annotations:
+      summary: "IPFS node is down"
+      description: "IPFS node {{ $labels.instance }} is not responding"
+
+  - alert: IPFSStorageUsage
+    expr: ipfs_repo_size_bytes / ipfs_repo_max_size_bytes > 0.9
+    for: 10m
+    labels:
+      severity: warning
+      service: storage
+    annotations:
+      summary: "IPFS storage usage high"
+      description: "IPFS repository is {{ $value }}% full"
+
+  # Service discovery and health checks
+  - alert: ServiceDiscoveryDown
+    expr: up{job="consul"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: infrastructure
+    annotations:
+      summary: "Service discovery is down"
+      description: "Consul service discovery {{ $labels.instance }} is not responding"
+
+  - alert: HealthCheckFailing
+    expr: probe_success == 0
+    for: 2m
+    labels:
+      severity: critical
+      service: monitoring
+    annotations:
+      summary: "Health check is failing"
+      description: "Health check for {{ $labels.instance }} is failing"

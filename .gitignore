@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+# FastAPI/Uvicorn logs
+*.log
+# Node (if any)
+node_modules/
+# Java/Scala for Flink
+*.class
+target/
+# Blockchain artifacts
+build/
+artifacts/
+# General
+.env
+.DS_Store
